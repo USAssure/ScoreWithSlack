@@ -72,6 +72,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ScoreWithSlack.Db.publish.xml" />
-    <None Include="ScoreWithSlack.azure.publish.xml" />
   </ItemGroup>
 </Project>

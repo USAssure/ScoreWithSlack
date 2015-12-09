@@ -144,7 +144,15 @@ namespace ScoreWithSlack.Api.Controllers
             builder.AppendFormat(format, scoreModel.ScoreFromUser.UserName, scoreModel.Value,
                 scoreModel.ScoreForUser.UserName);
 
-            if (scoreModel.Value >= 20000)
+            if (scoreModel.Value == 42)
+                builder.Append(". The answer to all things.");
+            else if (scoreModel.Value == 23)
+                builder.Append(". http://images.sportsworldreport.com/data/images/full/15579/michael-jordan.jpg");
+            else if (scoreModel.Value == 73)
+                builder.Append(". According to Sheldon Cooper, the best number.");
+            else if (scoreModel.Value == 1337)
+                builder.Append(". :panda_face: <= Not what you expected, huh?");
+            else if (scoreModel.Value >= 20000)
                 builder.Append(". Holy schnikes! For everyone's protection, there's a limit of 20000!");
             else if (scoreModel.Value > 9000)
                 builder.Append(". OVER 9000!? https://i.ytimg.com/vi/LqSg9yVfzV0/maxresdefault.jpg");
@@ -154,20 +162,14 @@ namespace ScoreWithSlack.Api.Controllers
                 builder.Append(". High 5's all around!");
             else if (scoreModel.Value >= 100)
                 builder.Append(". Points for days!");
-            else if (scoreModel.Value == 42)
-                builder.Append(". The answer to all things.");
-            else if (scoreModel.Value == 23)
-                builder.Append(". http://images.sportsworldreport.com/data/images/full/15579/michael-jordan.jpg");
-            else if (scoreModel.Value == 1337)
-                builder.Append(". :panda_face: <= Not what you expected, huh?");
-            else if (scoreModel.Value <= -10)
-                builder.Append(". Uh oh! What's going on here?");
-            else if (scoreModel.Value <= -100)
-                builder.Append(". The points police have been called. This isn't good.");
-            else if (scoreModel.Value <= -1000)
-                builder.Append(". http://i.imgur.com/iWKad22.jpg");
             else if (scoreModel.Value <= -5000)
                 builder.Append(". Stop. Just... stop.");
+            else if (scoreModel.Value <= -1000)
+                builder.Append(". http://i.imgur.com/iWKad22.jpg");
+            else if (scoreModel.Value <= -100)
+                builder.Append(". The points police have been called. This isn't good.");
+            else if (scoreModel.Value <= -10)
+                builder.Append(". Uh oh! What's going on here?");
 
             return builder.ToString();
         }

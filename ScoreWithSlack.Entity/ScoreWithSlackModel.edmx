@@ -1,0 +1,434 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="ScoreWithSlackModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Profile">
+          <Key>
+            <PropertyRef Name="ProfileId" />
+          </Key>
+          <Property Name="ProfileId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="SlackUserId" Type="varchar" MaxLength="100" />
+          <Property Name="SlackUserName" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="FirstName" Type="nvarchar" MaxLength="50" />
+          <Property Name="LastName" Type="nvarchar" MaxLength="75" />
+          <Property Name="Email" Type="nvarchar" MaxLength="150" />
+          <Property Name="JoinDate" Type="date" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ProfileSlackTeam">
+          <Key>
+            <PropertyRef Name="ProfileId" />
+            <PropertyRef Name="SlackTeamId" />
+          </Key>
+          <Property Name="ProfileId" Type="int" Nullable="false" />
+          <Property Name="SlackTeamId" Type="varchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Score">
+          <Key>
+            <PropertyRef Name="ScoreId" />
+          </Key>
+          <Property Name="ScoreId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ScoreDate" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="Value" Type="int" Nullable="false" />
+          <Property Name="ScoreForProfileId" Type="int" Nullable="false" />
+          <Property Name="ScoreFromProfileId" Type="int" Nullable="false" />
+          <Property Name="SeasonId" Type="int" Nullable="false" />
+          <Property Name="SlackTeamId" Type="varchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Season">
+          <Key>
+            <PropertyRef Name="SeasonId" />
+          </Key>
+          <Property Name="SeasonId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="SeasonName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="StartDate" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="EndDate" Type="datetime2" Precision="7" />
+        </EntityType>
+        <EntityType Name="SeasonSlackTeam">
+          <Key>
+            <PropertyRef Name="SeasonId" />
+            <PropertyRef Name="SlackTeamId" />
+          </Key>
+          <Property Name="SeasonId" Type="int" Nullable="false" />
+          <Property Name="SlackTeamId" Type="varchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SlackTeam">
+          <Key>
+            <PropertyRef Name="SlackTeamId" />
+          </Key>
+          <Property Name="SlackTeamId" Type="varchar" MaxLength="100" Nullable="false" />
+          <Property Name="SlackTeamToken" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="JoinDate" Type="date" Nullable="false" />
+        </EntityType>
+        <Association Name="Profile_ProfileSlackTeam_FK">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="1" />
+          <End Role="ProfileSlackTeam" Type="Self.ProfileSlackTeam" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Profile">
+              <PropertyRef Name="ProfileId" />
+            </Principal>
+            <Dependent Role="ProfileSlackTeam">
+              <PropertyRef Name="ProfileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Profile_ScoreFor_FK">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Profile">
+              <PropertyRef Name="ProfileId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="ScoreForProfileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Profile_ScoreFrom_FK">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Profile">
+              <PropertyRef Name="ProfileId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="ScoreFromProfileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Season_Score_FK">
+          <End Role="Season" Type="Self.Season" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Season">
+              <PropertyRef Name="SeasonId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="SeasonId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Season_SeasonSlackTeam_FK">
+          <End Role="Season" Type="Self.Season" Multiplicity="1" />
+          <End Role="SeasonSlackTeam" Type="Self.SeasonSlackTeam" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Season">
+              <PropertyRef Name="SeasonId" />
+            </Principal>
+            <Dependent Role="SeasonSlackTeam">
+              <PropertyRef Name="SeasonId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="SlackTeam_ProfileSlackTeam_FK">
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="1" />
+          <End Role="ProfileSlackTeam" Type="Self.ProfileSlackTeam" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Principal>
+            <Dependent Role="ProfileSlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="SlackTeam_Score_FK">
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="SlackTeamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="SlackTeam_SeasonSlackTeam_FK">
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="1" />
+          <End Role="SeasonSlackTeam" Type="Self.SeasonSlackTeam" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Principal>
+            <Dependent Role="SeasonSlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="ScoreWithSlackModelStoreContainer">
+          <EntitySet Name="Profile" EntityType="Self.Profile" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ProfileSlackTeam" EntityType="Self.ProfileSlackTeam" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Score" EntityType="Self.Score" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Season" EntityType="Self.Season" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SeasonSlackTeam" EntityType="Self.SeasonSlackTeam" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SlackTeam" EntityType="Self.SlackTeam" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="Profile_ProfileSlackTeam_FK" Association="Self.Profile_ProfileSlackTeam_FK">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="ProfileSlackTeam" EntitySet="ProfileSlackTeam" />
+          </AssociationSet>
+          <AssociationSet Name="Profile_ScoreFor_FK" Association="Self.Profile_ScoreFor_FK">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="Profile_ScoreFrom_FK" Association="Self.Profile_ScoreFrom_FK">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="Season_Score_FK" Association="Self.Season_Score_FK">
+            <End Role="Season" EntitySet="Season" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="Season_SeasonSlackTeam_FK" Association="Self.Season_SeasonSlackTeam_FK">
+            <End Role="Season" EntitySet="Season" />
+            <End Role="SeasonSlackTeam" EntitySet="SeasonSlackTeam" />
+          </AssociationSet>
+          <AssociationSet Name="SlackTeam_ProfileSlackTeam_FK" Association="Self.SlackTeam_ProfileSlackTeam_FK">
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+            <End Role="ProfileSlackTeam" EntitySet="ProfileSlackTeam" />
+          </AssociationSet>
+          <AssociationSet Name="SlackTeam_Score_FK" Association="Self.SlackTeam_Score_FK">
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="SlackTeam_SeasonSlackTeam_FK" Association="Self.SlackTeam_SeasonSlackTeam_FK">
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+            <End Role="SeasonSlackTeam" EntitySet="SeasonSlackTeam" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="ScoreWithSlackModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Profile">
+          <Key>
+            <PropertyRef Name="ProfileId" />
+          </Key>
+          <Property Name="ProfileId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="SlackUserId" Type="String" MaxLength="100" FixedLength="false" Unicode="false" />
+          <Property Name="SlackUserName" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="FirstName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="LastName" Type="String" MaxLength="75" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="JoinDate" Type="DateTime" Nullable="false" Precision="0" />
+          <NavigationProperty Name="ScoreFor" Relationship="Self.Profile_ScoreFor_FK" FromRole="Profile" ToRole="Score" />
+          <NavigationProperty Name="ScoreFrom" Relationship="Self.Profile_ScoreFrom_FK" FromRole="Profile" ToRole="Score" />
+          <NavigationProperty Name="SlackTeam" Relationship="Self.ProfileSlackTeam" FromRole="Profile" ToRole="SlackTeam" />
+        </EntityType>
+        <EntityType Name="Score">
+          <Key>
+            <PropertyRef Name="ScoreId" />
+          </Key>
+          <Property Name="ScoreId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ScoreDate" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="Value" Type="Int32" Nullable="false" />
+          <Property Name="ScoreForProfileId" Type="Int32" Nullable="false" />
+          <Property Name="ScoreFromProfileId" Type="Int32" Nullable="false" />
+          <Property Name="SeasonId" Type="Int32" Nullable="false" />
+          <Property Name="SlackTeamId" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="ScoreForProfile" Relationship="Self.Profile_ScoreFor_FK" FromRole="Score" ToRole="Profile" />
+          <NavigationProperty Name="ScoreFromProfile" Relationship="Self.Profile_ScoreFrom_FK" FromRole="Score" ToRole="Profile" />
+          <NavigationProperty Name="Season" Relationship="Self.Season_Score_FK" FromRole="Score" ToRole="Season" />
+          <NavigationProperty Name="SlackTeam" Relationship="Self.SlackTeam_Score_FK" FromRole="Score" ToRole="SlackTeam" />
+        </EntityType>
+        <EntityType Name="Season">
+          <Key>
+            <PropertyRef Name="SeasonId" />
+          </Key>
+          <Property Name="SeasonId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="SeasonName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="StartDate" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="EndDate" Type="DateTime" Precision="7" />
+          <NavigationProperty Name="Score" Relationship="Self.Season_Score_FK" FromRole="Season" ToRole="Score" />
+          <NavigationProperty Name="SlackTeam" Relationship="Self.SeasonSlackTeam" FromRole="Season" ToRole="SlackTeam" />
+        </EntityType>
+        <EntityType Name="SlackTeam">
+          <Key>
+            <PropertyRef Name="SlackTeamId" />
+          </Key>
+          <Property Name="SlackTeamId" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="SlackTeamToken" Type="String" MaxLength="150" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="JoinDate" Type="DateTime" Nullable="false" Precision="0" />
+          <NavigationProperty Name="Score" Relationship="Self.SlackTeam_Score_FK" FromRole="SlackTeam" ToRole="Score" />
+          <NavigationProperty Name="Profile" Relationship="Self.ProfileSlackTeam" FromRole="SlackTeam" ToRole="Profile" />
+          <NavigationProperty Name="Season" Relationship="Self.SeasonSlackTeam" FromRole="SlackTeam" ToRole="Season" />
+        </EntityType>
+        <Association Name="Profile_ScoreFor_FK">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Profile">
+              <PropertyRef Name="ProfileId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="ScoreForProfileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Profile_ScoreFrom_FK">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Profile">
+              <PropertyRef Name="ProfileId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="ScoreFromProfileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="Season_Score_FK">
+          <End Role="Season" Type="Self.Season" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Season">
+              <PropertyRef Name="SeasonId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="SeasonId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="SlackTeam_Score_FK">
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="1" />
+          <End Role="Score" Type="Self.Score" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SlackTeam">
+              <PropertyRef Name="SlackTeamId" />
+            </Principal>
+            <Dependent Role="Score">
+              <PropertyRef Name="SlackTeamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="ProfileSlackTeam">
+          <End Role="Profile" Type="Self.Profile" Multiplicity="*" />
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="*" />
+        </Association>
+        <Association Name="SeasonSlackTeam">
+          <End Role="Season" Type="Self.Season" Multiplicity="*" />
+          <End Role="SlackTeam" Type="Self.SlackTeam" Multiplicity="*" />
+        </Association>
+        <EntityContainer Name="ScoreWithSlackEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Profile" EntityType="Self.Profile" />
+          <EntitySet Name="Score" EntityType="Self.Score" />
+          <EntitySet Name="Season" EntityType="Self.Season" />
+          <EntitySet Name="SlackTeam" EntityType="Self.SlackTeam" />
+          <AssociationSet Name="Profile_ScoreFor_FK" Association="Self.Profile_ScoreFor_FK">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="Profile_ScoreFrom_FK" Association="Self.Profile_ScoreFrom_FK">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="Season_Score_FK" Association="Self.Season_Score_FK">
+            <End Role="Season" EntitySet="Season" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="SlackTeam_Score_FK" Association="Self.SlackTeam_Score_FK">
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+            <End Role="Score" EntitySet="Score" />
+          </AssociationSet>
+          <AssociationSet Name="ProfileSlackTeam" Association="Self.ProfileSlackTeam">
+            <End Role="Profile" EntitySet="Profile" />
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+          </AssociationSet>
+          <AssociationSet Name="SeasonSlackTeam" Association="Self.SeasonSlackTeam">
+            <End Role="Season" EntitySet="Season" />
+            <End Role="SlackTeam" EntitySet="SlackTeam" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="ScoreWithSlackModelStoreContainer" CdmEntityContainer="ScoreWithSlackEntities">
+          <EntitySetMapping Name="Profile">
+            <EntityTypeMapping TypeName="ScoreWithSlackModel.Profile">
+              <MappingFragment StoreEntitySet="Profile">
+                <ScalarProperty Name="ProfileId" ColumnName="ProfileId" />
+                <ScalarProperty Name="SlackUserId" ColumnName="SlackUserId" />
+                <ScalarProperty Name="SlackUserName" ColumnName="SlackUserName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="LastName" ColumnName="LastName" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="JoinDate" ColumnName="JoinDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Score">
+            <EntityTypeMapping TypeName="ScoreWithSlackModel.Score">
+              <MappingFragment StoreEntitySet="Score">
+                <ScalarProperty Name="ScoreId" ColumnName="ScoreId" />
+                <ScalarProperty Name="ScoreDate" ColumnName="ScoreDate" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="ScoreForProfileId" ColumnName="ScoreForProfileId" />
+                <ScalarProperty Name="ScoreFromProfileId" ColumnName="ScoreFromProfileId" />
+                <ScalarProperty Name="SeasonId" ColumnName="SeasonId" />
+                <ScalarProperty Name="SlackTeamId" ColumnName="SlackTeamId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Season">
+            <EntityTypeMapping TypeName="ScoreWithSlackModel.Season">
+              <MappingFragment StoreEntitySet="Season">
+                <ScalarProperty Name="SeasonId" ColumnName="SeasonId" />
+                <ScalarProperty Name="SeasonName" ColumnName="SeasonName" />
+                <ScalarProperty Name="StartDate" ColumnName="StartDate" />
+                <ScalarProperty Name="EndDate" ColumnName="EndDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SlackTeam">
+            <EntityTypeMapping TypeName="ScoreWithSlackModel.SlackTeam">
+              <MappingFragment StoreEntitySet="SlackTeam">
+                <ScalarProperty Name="SlackTeamId" ColumnName="SlackTeamId" />
+                <ScalarProperty Name="SlackTeamToken" ColumnName="SlackTeamToken" />
+                <ScalarProperty Name="JoinDate" ColumnName="JoinDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <AssociationSetMapping Name="ProfileSlackTeam" TypeName="ScoreWithSlackModel.ProfileSlackTeam" StoreEntitySet="ProfileSlackTeam">
+            <EndProperty Name="Profile">
+              <ScalarProperty Name="ProfileId" ColumnName="ProfileId" />
+            </EndProperty>
+            <EndProperty Name="SlackTeam">
+              <ScalarProperty Name="SlackTeamId" ColumnName="SlackTeamId" />
+            </EndProperty>
+          </AssociationSetMapping>
+          <AssociationSetMapping Name="SeasonSlackTeam" TypeName="ScoreWithSlackModel.SeasonSlackTeam" StoreEntitySet="SeasonSlackTeam">
+            <EndProperty Name="Season">
+              <ScalarProperty Name="SeasonId" ColumnName="SeasonId" />
+            </EndProperty>
+            <EndProperty Name="SlackTeam">
+              <ScalarProperty Name="SlackTeamId" ColumnName="SlackTeamId" />
+            </EndProperty>
+          </AssociationSetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

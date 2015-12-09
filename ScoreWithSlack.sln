@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreWithSlack.Api", "ScoreWithSlack.Api\ScoreWithSlack.Api.csproj", "{B3FA2CAA-6215-4593-8FF3-0F85350919A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreWithSlack.Service", "ScoreWithSlack.Service\ScoreWithSlack.Service.csproj", "{B1E5E6D2-33AC-4B06-8A98-C840B03252C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreWithSlack.Entity", "ScoreWithSlack.Entity\ScoreWithSlack.Entity.csproj", "{3F198226-FC40-4A4C-9F9F-77889B828CBB}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "ScoreWithSlack.Db", "ScoreWithSlack.Db\ScoreWithSlack.Db.sqlproj", "{8C091B20-BDFA-4CC6-B728-815B7BFC8885}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreWithSlack.Models", "ScoreWithSlack.Models\ScoreWithSlack.Models.csproj", "{3E2D5992-1267-4F1B-B424-C956683B1E16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B3FA2CAA-6215-4593-8FF3-0F85350919A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3FA2CAA-6215-4593-8FF3-0F85350919A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3FA2CAA-6215-4593-8FF3-0F85350919A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3FA2CAA-6215-4593-8FF3-0F85350919A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1E5E6D2-33AC-4B06-8A98-C840B03252C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1E5E6D2-33AC-4B06-8A98-C840B03252C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1E5E6D2-33AC-4B06-8A98-C840B03252C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1E5E6D2-33AC-4B06-8A98-C840B03252C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F198226-FC40-4A4C-9F9F-77889B828CBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F198226-FC40-4A4C-9F9F-77889B828CBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F198226-FC40-4A4C-9F9F-77889B828CBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F198226-FC40-4A4C-9F9F-77889B828CBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C091B20-BDFA-4CC6-B728-815B7BFC8885}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{3E2D5992-1267-4F1B-B424-C956683B1E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E2D5992-1267-4F1B-B424-C956683B1E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E2D5992-1267-4F1B-B424-C956683B1E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E2D5992-1267-4F1B-B424-C956683B1E16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

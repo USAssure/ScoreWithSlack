@@ -6,6 +6,7 @@ using System.Web.Http;
 using ScoreWithSlack.Api.Models;
 using ScoreWithSlack.Models;
 using ScoreWithSlack.Service;
+using ScoreWithSlack.Api.Factory;
 
 namespace ScoreWithSlack.Api.Controllers
 {
@@ -17,12 +18,12 @@ namespace ScoreWithSlack.Api.Controllers
         private const string ScoreCommand = "/score";
         private const string ScoreboardCommand = "/scoreboard"; 
 
-        public ScoreController(IScoreWithSlackService scoreWithSlackService)
+        public ScoreController(IScoreWithSlackServiceFactory scoreWithSlackServiceFactory)
         {
-            if(scoreWithSlackService == null)
-                throw new ArgumentNullException(nameof(scoreWithSlackService));
+            if(scoreWithSlackServiceFactory == null)
+                throw new ArgumentNullException(nameof(scoreWithSlackServiceFactory));
 
-            _scoreWithSlackService = scoreWithSlackService;
+            _scoreWithSlackService = scoreWithSlackServiceFactory.CreateService();
         }
 
         [HttpPost]

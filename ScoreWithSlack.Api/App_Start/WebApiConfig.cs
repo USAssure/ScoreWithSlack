@@ -5,6 +5,7 @@ using ScoreWithSlack.Api.IoC;
 using ScoreWithSlack.Api.MessageHandlers;
 using ScoreWithSlack.Entity;
 using ScoreWithSlack.Service;
+using ScoreWithSlack.Api.Factory;
 
 namespace ScoreWithSlack.Api
 {
@@ -14,8 +15,7 @@ namespace ScoreWithSlack.Api
         {
             //configure unity
             var container = new UnityContainer();
-            container.RegisterType<DbContext, ScoreWithSlackEntities>(new HierarchicalLifetimeManager());
-            container.RegisterType<IScoreWithSlackService, ScoreWithSlackService>();
+            container.RegisterType<IScoreWithSlackServiceFactory, ScoreWithSlackServiceFactory>();
             config.DependencyResolver = new UnityDependencyResolver(container);
 
             //TODO: debug on azure; works fine localhost

@@ -4,21 +4,23 @@ using System.Linq;
 using ScoreWithSlack.Entity;
 using ScoreWithSlack.Models;
 using ScoreWithSlack.Service.Adapters;
+using System.Data.SqlClient;
+using Dapper;
 
 namespace ScoreWithSlack.Service
 {
     //TODO: add achievements
     public class ScoreWithSlackService : IScoreWithSlackService
     {
-        private readonly ScoreWithSlackEntities _context;
+        private readonly ScoreWithSlackConfig _config;
         private const int MaxSingleScore = 20000; //TODO: make configurable
 
-        public ScoreWithSlackService(ScoreWithSlackEntities context)
+        public ScoreWithSlackService(ScoreWithSlackConfig config)
         {
-            if(context == null)
-                throw new ArgumentNullException(nameof(context));
+            if(config == null)
+                throw new ArgumentNullException(nameof(config));
 
-            _context = context;
+            _config = config;
         }
 
         //TODO: hook into slack api to validate users
@@ -49,27 +51,69 @@ namespace ScoreWithSlack.Service
                         UserName = scoreForSlackUser
                     }, slackTeam)).ToList();
 
-            //select the most recent, active, season
-            var slackTeamEntity =
-                _context.SlackTeam.Single(
-                    t => t.SlackTeamId == slackTeam.TeamId && t.SlackTeamToken == slackTeam.Token);
-
-            //TODO: add multiple scorers
-            var scoreForUser = scoreForSlackUsers.First();
-            var scoreEntity = new Score
+            using (var connection = new SqlConnection(_config.ConnectionString))
             {
-                ScoreDate = DateTime.Now,
-                Value = Math.Min(MaxSingleScore, scoreValues.Sum()),
-                ScoreForProfile = _context.Profile.First(p => p.ProfileId == scoreForUser.ProfileId),
-                ScoreFromProfile = _context.Profile.First(p => p.ProfileId == scoreFromSlackUser.ProfileId),
-                Season = slackTeamEntity.Season.OrderByDescending(t => t.StartDate).First(),
-                SlackTeam = slackTeamEntity
-            };
+                var scoreEntity = connection.Query<Score, Profile, Profile, Season, SlackTeam, Score>(
+                    @"declare @SeasonId int
+                      declare @ScoreResult as table (ScoreId int)
 
-            _context.Score.Add(scoreEntity);
-            _context.SaveChanges();
+                      select top 1 @SeasonId = s.[SeasonId]
+                      from   [ScoreWithSlack.Db].[dbo].[Season] s
+                          inner join [ScoreWithSlack.Db].[dbo].[SeasonSlackTeam] sst on s.[SeasonId] = sst.[SeasonId]
+                      where  sst.[SlackTeamId] = @teamId
+                      order by s.[StartDate] desc;
 
-            return ScoreWithSlackAdapter.ToScoreModel(scoreEntity);
+                      insert into [dbo].[Score] ([ScoreDate], [Value], [ScoreForProfileId], [ScoreFromProfileId], [SeasonId], [SlackTeamId]) output Inserted.ScoreId into @ScoreResult
+                                         values (@scoreDate, @value, @scoreForProfileId, @scoreFromProfileId, @SeasonId, @teamId);
+
+                      select s.*
+                           , fp.[ProfileId] as 'ScoreForProfileId'
+	                       , fp.[SlackUserId]
+	                       , fp.[SlackUserName]
+	                       , fp.[FirstName]
+	                       , fp.[LastName]
+	                       , fp.[Email]
+	                       , fp.[JoinDate]
+                           , frp.[ProfileId] as 'ScoreFromProfileId'
+	                       , frp.[SlackUserId]
+	                       , frp.[SlackUserName]
+	                       , frp.[FirstName]
+	                       , frp.[LastName]
+	                       , frp.[Email]
+	                       , frp.[JoinDate]
+	                       , sn.[SeasonId] as 'ScoreSeasonId'
+	                       , sn.[SeasonName]
+	                       , sn.[StartDate]
+	                       , sn.[EndDate]
+	                       , st.[SlackTeamId] as 'ScoreSlackTeamId'
+	                       , st.[SlackTeamToken]
+	                       , st.[JoinDate]
+                      from   [ScoreWithSlack.Db].[dbo].[Score] s
+                          inner join @ScoreResult sr on s.[ScoreId] = sr.[ScoreId]
+                          inner join [ScoreWithSlack.Db].[dbo].[Profile] fp on s.[ScoreForProfileId] = fp.[ProfileId]
+	                      inner join [ScoreWithSlack.Db].[dbo].[Profile] frp on s.[ScoreFromProfileId] = frp.[ProfileId]
+	                      inner join [ScoreWithSlack.Db].[dbo].[Season] sn on s.[SeasonId] = sn.[SeasonId]
+	                      inner join [ScoreWithSlack.Db].[dbo].[SlackTeam] st on s.[SlackTeamId] = st.[SlackTeamId];",
+                    map: (score, forProfile, fromProfile, season, team) =>
+                    {
+                        score.ScoreForProfile = forProfile;
+                        score.ScoreFromProfile = fromProfile;
+                        score.Season = season;
+                        score.SlackTeam = team;
+                        return score;
+                    },
+                    splitOn: "ScoreForProfileId,ScoreFromProfileId,ScoreSeasonId,ScoreSlackTeamId",
+                    param: new
+                    {
+                        teamId = slackTeam.TeamId,
+                        scoreDate = DateTime.Now,
+                        value = Math.Min(MaxSingleScore, scoreValues.Sum()),
+                        scoreForProfileId = scoreForSlackUsers.First().ProfileId,
+                        scoreFromProfileId = scoreFromSlackUser.ProfileId
+                    }).Single();
+
+                return ScoreWithSlackAdapter.ToScoreModel(scoreEntity);
+            }
         }
 
         public IEnumerable<ScoreModel> GetScoresForSlackTeam(SlackTeamModel slackTeam)
@@ -80,17 +124,58 @@ namespace ScoreWithSlack.Service
             if (GetSlackTeam(slackTeam.Token, slackTeam.TeamId) == null)
                 slackTeam = CreateTeam(slackTeam);
 
-            var slackTeamEntity =
-                _context.SlackTeam.Single(t => t.SlackTeamId == slackTeam.TeamId);
+            using (var connection = new SqlConnection(_config.ConnectionString))
+            {
+                return connection.Query<Score, Profile, Profile, Season, SlackTeam, Score>(
+                    @"declare @SeasonId int
 
-            //select the most recent, active, season
-            var mostRecentSeason = slackTeamEntity.Season.OrderByDescending(s => s.StartDate).First();
+                    select top 1 @SeasonId = s.[SeasonId] 
+                    from   [ScoreWithSlack.Db].[dbo].[Season] s
+	                    inner join [ScoreWithSlack.Db].[dbo].[SeasonSlackTeam] sst on s.[SeasonId] = sst.[SeasonId]
+                    where  sst.[SlackTeamId] = 'T03G1BGT1'
+                    order by s.[StartDate] desc;
 
-            return
-                _context.Score.Where(
-                    s => s.SlackTeamId == slackTeamEntity.SlackTeamId && s.SeasonId == mostRecentSeason.SeasonId)
-                    .ToList()
-                    .Select(ScoreWithSlackAdapter.ToScoreModel);
+                    select s.*
+                         , fp.[ProfileId] as 'ScoreForProfileId'
+	                     , fp.[SlackUserId]
+	                     , fp.[SlackUserName]
+	                     , fp.[FirstName]
+	                     , fp.[LastName]
+	                     , fp.[Email]
+	                     , fp.[JoinDate]
+                         , frp.[ProfileId] as 'ScoreFromProfileId'
+	                     , frp.[SlackUserId]
+	                     , frp.[SlackUserName]
+	                     , frp.[FirstName]
+	                     , frp.[LastName]
+	                     , frp.[Email]
+	                     , frp.[JoinDate]
+	                     , sn.[SeasonId] as 'ScoreSeasonId'
+	                     , sn.[SeasonName]
+	                     , sn.[StartDate]
+	                     , sn.[EndDate]
+	                     , st.[SlackTeamId] as 'ScoreSlackTeamId'
+	                     , st.[SlackTeamToken]
+	                     , st.[JoinDate]
+                    from   [ScoreWithSlack.Db].[dbo].[Score] s
+	                    inner join [ScoreWithSlack.Db].[dbo].[Profile] fp on s.[ScoreForProfileId] = fp.[ProfileId]
+	                    inner join [ScoreWithSlack.Db].[dbo].[Profile] frp on s.[ScoreFromProfileId] = frp.[ProfileId]
+	                    inner join [ScoreWithSlack.Db].[dbo].[Season] sn on s.[SeasonId] = sn.[SeasonId]
+	                    inner join [ScoreWithSlack.Db].[dbo].[SlackTeam] st on s.[SlackTeamId] = st.[SlackTeamId]
+                    where  s.[SlackTeamId] = 'T03G1BGT1'
+                       and s.[SeasonId] = @SeasonId;",
+                    map: (score, forProfile, fromProfile, season, team) =>
+                    {
+                        score.ScoreForProfile = forProfile;
+                        score.ScoreFromProfile = fromProfile;
+                        score.Season = season;
+                        score.SlackTeam = team;
+                        return score;
+                    }, 
+                    splitOn: "ScoreForProfileId,ScoreFromProfileId,ScoreSeasonId,ScoreSlackTeamId",
+                    param: new { teamId = slackTeam.TeamId })
+                    .ToList().Select(ScoreWithSlackAdapter.ToScoreModel);
+            }
         }
 
         private SlackTeamModel CreateTeam(SlackTeamModel slackTeam)
@@ -98,24 +183,37 @@ namespace ScoreWithSlack.Service
             if (slackTeam == null)
                 throw new ArgumentNullException(nameof(slackTeam));
 
-            var slackTeamEntity = _context.SlackTeam.FirstOrDefault(t => t.SlackTeamId == slackTeam.TeamId);
-            if (slackTeamEntity != null)
-                return ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
-
-            //create new team and season
-            slackTeamEntity = ScoreWithSlackAdapter.ToSlackTeamEntity(slackTeam);
-            slackTeamEntity.JoinDate = DateTime.Now;
-            slackTeamEntity.Season.Add(new Season
+            using (var connection = new SqlConnection(_config.ConnectionString))
             {
-                SeasonName = "Default",
-                StartDate = DateTime.Now,
-                EndDate = null
-            });
+                var slackTeamEntity = connection.Query<SlackTeam>(
+                    @"select *
+                      from   [dbo].[SlackTeam]
+                      where  [SlackTeamId] = @teamId", new { teamId = slackTeam.TeamId }).FirstOrDefault();
 
-            _context.SlackTeam.Add(slackTeamEntity);
-            _context.SaveChanges();
+                if (slackTeamEntity != null)
+                    return ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
 
-            return ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
+                //create new team and season
+                slackTeamEntity = ScoreWithSlackAdapter.ToSlackTeamEntity(slackTeam);
+                slackTeamEntity.JoinDate = DateTime.Now;
+
+                var slackTeamSeason = new Season
+                {
+                    SeasonName = "Default",
+                    StartDate = DateTime.Now,
+                    EndDate = null
+                };
+
+                connection.Execute(
+                    @"insert into [dbo].[SlackTeam] values (@slackTeamId, @slackTeamToken, @joinDate", 
+                    new { slackTeamId = slackTeam.TeamId, slackTeamToken = slackTeam.Token, joinDate = slackTeam.JoinDate });
+
+                connection.Execute(
+                    @"insert into [dbo].[SeasonSlackTeam] ([SlackTeamId]) values (@slackTeamId)",
+                    new { slackTeamId = slackTeam.TeamId });
+
+                return ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
+            }
         }
 
         private SlackTeamModel GetSlackTeam(string token, string teamId)
@@ -126,10 +224,17 @@ namespace ScoreWithSlack.Service
             if (string.IsNullOrEmpty(teamId))
                 throw new ArgumentNullException(nameof(teamId));
 
-            var slackTeamEntity =
-                _context.SlackTeam.FirstOrDefault(t => t.SlackTeamId == teamId && t.SlackTeamToken == token);
+            using (var connection = new SqlConnection(_config.ConnectionString))
+            {
+                var slackTeamEntity = connection.Query<SlackTeam>(
+                    @"select *
+                      from   [dbo].[SlackTeam]
+                      where  [SlackTeamId] = @teamId
+                         and [SlackTeamToken] = @token"
+                , new { teamId = teamId, token = token }).FirstOrDefault();
 
-            return slackTeamEntity == null ? null : ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
+                return slackTeamEntity == null ? null : ScoreWithSlackAdapter.ToSlackTeamModel(slackTeamEntity);
+            }
         }
 
         private SlackUserModel CreateSlackUser(SlackUserModel slackUser, SlackTeamModel slackTeam)
@@ -143,25 +248,57 @@ namespace ScoreWithSlack.Service
             if (GetSlackTeam(slackTeam.Token, slackTeam.TeamId) == null)
                 slackTeam = CreateTeam(slackTeam);
 
-            var slackTeamEntity =
-                _context.SlackTeam.Single(t => t.SlackTeamId == slackTeam.TeamId);
+            using (var connection = new SqlConnection(_config.ConnectionString))
+            {
+                var slackTeamEntity = connection.Query<SlackTeam>(
+                    @"select *
+                      from   [dbo].[SlackTeam]
+                      where  [SlackTeamId] = @teamId",
+                    new { teamId = slackTeam.TeamId }).Single();
 
-            //if the user exists, but isn't associated to the team, associate them; otherwise, return what was found
-            var slackUserEntity = _context.Profile.FirstOrDefault(p => p.SlackUserName == slackUser.UserName);
-            if (slackUserEntity != null)
-                return slackUserEntity.SlackTeam.All(t => t.SlackTeamId != slackTeam.TeamId) ?
-                            AssociateUserToTeam(ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity), slackTeam) :
-                            ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+                var slackUserEntity = connection.Query<Profile>(
+                    @"select *
+                      from   [dbo].[Profile]
+                      where  [SlackUserName] = @userName",
+                    new { userName = slackUser.UserName }).FirstOrDefault();
 
-            //create new user and associate them to the team
-            slackUserEntity = ScoreWithSlackAdapter.ToProfileEntity(slackUser);
-            slackUserEntity.JoinDate = DateTime.Now;
-            slackUserEntity.SlackTeam.Add(slackTeamEntity);
+                var userSlackTeams = connection.Query(
+                    @"select *
+                      from   [dbo].[ProfileSlackTeam]
+                      where  [SlackTeamId] = @teamId",
+                    new { teamId = slackTeam.TeamId });
 
-            _context.Profile.Add(slackUserEntity);
-            _context.SaveChanges();
+                //if the user exists, but isn't associated to the team, associate them; otherwise, return what was found
+                if (slackUserEntity != null)
+                    return !userSlackTeams.Any() ?
+                                AssociateUserToTeam(ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity), slackTeam) :
+                                ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
 
-            return ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+                //create new user and associate them to the team
+                slackUserEntity = ScoreWithSlackAdapter.ToProfileEntity(slackUser);
+                slackUserEntity.JoinDate = DateTime.Now;
+
+                int profileId = connection.Query<int>(
+                    @"insert into [dbo].[Profile] ([SlackUserId], [SlackUserName], [FirstName], [LastName], [Email], [JoinDate])
+                                           values (@userId, @userName, @firstName, @lastName, @email, @joinDate);
+
+                      select cast(scope_identity() as int)",
+                    new
+                    {
+                        userId = slackUserEntity.SlackUserId,
+                        userName = slackUserEntity.SlackUserName,
+                        firstName = slackUserEntity.FirstName,
+                        lastName = slackUserEntity.LastName,
+                        email = slackUserEntity.Email,
+                        joinDate = slackUserEntity.JoinDate
+                    }).Single();
+
+                connection.Execute(
+                    @"insert into [dbo].[ProfileSlackTeam] values (@profileId, @teamId)",
+                    new { profileId = profileId, teamId = slackTeamEntity.SlackTeamId });
+
+                return ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+            }
         }
 
         private SlackUserModel AssociateUserToTeam(SlackUserModel slackUser, SlackTeamModel slackTeam)
@@ -172,14 +309,27 @@ namespace ScoreWithSlack.Service
             if (slackTeam == null)
                 throw new ArgumentNullException(nameof(slackTeam));
 
-            var slackUserEntity = _context.Profile.Single(p => p.SlackUserName == slackUser.UserName);
-            var slackTeamEntity =
-                _context.SlackTeam.Single(t => t.SlackTeamId == slackTeam.TeamId && t.SlackTeamToken == slackTeam.Token);
+            using (var connection = new SqlConnection(_config.ConnectionString))
+            {
+                var slackUserEntity = connection.Query<Profile>(
+                    @"select *
+                      from   [dbo].[Profile]
+                      where  [SlackUserName] = @userName",
+                    new {  userName = slackUser.UserName}).Single();
 
-            slackUserEntity.SlackTeam.Add(slackTeamEntity);
-            _context.SaveChanges();
+                var slackTeamEntity = connection.Query<SlackTeam>(
+                    @"select *
+                      from   [dbo].[SlackTeam]
+                      where  [SlackTeamId] = @teamId
+                         and [SlackTeamToken] = @token",
+                    new { teamId = slackTeam.TeamId, token = slackTeam.Token }).Single();
 
-            return ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+                connection.Execute(
+                    @"insert into [dbo].[ProfileSlackTeam] values (@profileId, @teamId)",
+                    new { profileId = slackUserEntity.ProfileId, teamId = slackTeamEntity.SlackTeamId });
+
+                return ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+            }
         }
         
         private SlackUserModel GetSlackUserForTeam(string userName, SlackTeamModel slackTeam)
@@ -190,12 +340,21 @@ namespace ScoreWithSlack.Service
             if (slackTeam == null)
                 throw new ArgumentNullException(nameof(slackTeam));
 
-            var slackUserEntity =
-                _context.Profile.FirstOrDefault(
-                    p => p.SlackUserName.Equals(userName, StringComparison.InvariantCultureIgnoreCase) &&
-                         p.SlackTeam.Any(t => t.SlackTeamId == slackTeam.TeamId && t.SlackTeamToken == slackTeam.Token));
+            using (var connection = new SqlConnection(_config.ConnectionString))
+            {
+                var slackUserEntity = connection.Query<Profile>(
+                        @"select p.*
+                          from   [ScoreWithSlack.Db].[dbo].[Profile] p
+	                          inner join [ScoreWithSlack.Db].[dbo].[ProfileSlackTeam] pst on p.[ProfileId] = pst.[ProfileId]
+	                          inner join [ScoreWithSlack.Db].[dbo].[SlackTeam] st on pst.[SlackTeamId] = st.[SlackTeamId]
+                          where  p.[SlackUserName] = @userName
+                             and st.[SlackTeamId] = @teamId
+                             and st.[SlackTeamToken] = @token;",
+                        new { userName = userName, teamId = slackTeam.TeamId, token = slackTeam.Token }
+                    ).FirstOrDefault();
 
-            return slackUserEntity == null ? null : ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+                return slackUserEntity == null ? null : ScoreWithSlackAdapter.ToSlackUserModel(slackUserEntity);
+            }
         }
     }
 }
